@@ -1,5 +1,4 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TypeFamilies          #-}
 module Ledger where
 
@@ -25,23 +24,23 @@ instance STS UTXOW where
   type Signal UTXOW = TxWits
   type Environment UTXOW = Ledger.Simple.ProtocolConstants
   data PredicateFailure UTXOW
-    = UtxoFailure (PredicateFailure UTXO)
+    = UtxoFailure [PredicateFailure UTXO]
     | InsufficientWitnesses
-    deriving Show
+    deriving (Eq, Show)
 
   rules =
     [ Rule [] $ Base (UTxO Map.empty)
     , Rule
-      [ SubTrans _1 (_3 . to body) utxoInductive
-      , Predicate $ \pc utxo tw -> witnessed tw utxo
+      [ SubTrans (to $ \(env, st, sig) -> (env, st, body sig)) utxoInductive
+      , Predicate $ \(pc, utxo, tw) -> witnessed tw utxo
       ]
       ( Extension . Transition $
-        \pc utxo (TxWits tx _) -> (txins tx ⋪ utxo) ∪ txouts tx
+        \(pc, utxo, TxWits tx _) -> (txins tx ⋪ utxo) ∪ txouts tx
       )
     ]
 
 instance Embed UTXO UTXOW where
-  stateLens = id
+  wrapFailed = UtxoFailure
 
 -- |Determine if a UTxO input is authorized by a given key.
 authTxin :: VKey -> TxIn -> UTxO -> Bool
