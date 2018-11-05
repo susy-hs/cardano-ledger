@@ -1,16 +1,17 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TypeFamilies          #-}
 module Ledger where
 
 import           Control.Lens
 import           Control.State.Transition
+import           Control.State.Transition.Generator
 import           Data.List
     (find)
 import qualified Data.Map.Strict as Map
 import           Data.Maybe
     (isJust)
 import qualified Data.Set as Set
+import qualified Hedgehog.Gen as Gen
 import           Ledger.Abstract
 import           Ledger.Simple
     (UTXO, utxoInductive)
@@ -25,23 +26,23 @@ instance STS UTXOW where
   type Signal UTXOW = TxWits
   type Environment UTXOW = Ledger.Simple.ProtocolConstants
   data PredicateFailure UTXOW
-    = UtxoFailure (PredicateFailure UTXO)
+    = UtxoFailure [PredicateFailure UTXO]
     | InsufficientWitnesses
-    deriving Show
+    deriving (Eq, Show)
 
   rules =
     [ Rule [] $ Base (UTxO Map.empty)
     , Rule
-      [ SubTrans _1 (_3 . to body) utxoInductive
-      , Predicate $ \pc utxo tw -> witnessed tw utxo
+      [ SubTrans (to $ \(env, st, sig) -> (env, st, body sig)) utxoInductive
+      , Predicate $ \(pc, utxo, tw) -> witnessed tw utxo
       ]
       ( Extension . Transition $
-        \pc utxo (TxWits tx _) -> (txins tx ⋪ utxo) ∪ txouts tx
+        \(pc, utxo, TxWits tx _) -> (txins tx ⋪ utxo) ∪ txouts tx
       )
     ]
 
 instance Embed UTXO UTXOW where
-  stateLens = id
+  wrapFailed = UtxoFailure
 
 -- |Determine if a UTxO input is authorized by a given key.
 authTxin :: VKey -> TxIn -> UTxO -> Bool
@@ -64,3 +65,16 @@ witnessed (TxWits tx wits) utxo =
       isJust $ find (isWitness tx input utxo) witnesses
     isWitness tx' input unspent (Wit key sig) =
       verify key tx' sig && authTxin key input unspent
+
+----------------------------------------------------------------------------------------
+-- Ledger generator
+----------------------------------------------------------------------------------------
+
+instance ProgressiveGen UTXOW where
+  data GenState UTXOW = GenState
+    { -- | Potential witnesses for transations.
+      witnesses :: [Wit]
+    }
+
+sigGen ::  GenM UTXOW TxWits
+sigGen = undefined
