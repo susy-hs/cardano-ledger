@@ -24,10 +24,10 @@ import           Capability.Reader
 import           Capability.State
 import           Capability.Writer
 import Control.Monad (join)
-import Control.Monad.Morph (hoist)
+import Control.Monad.Morph (generalize, hoist)
 import qualified Control.Monad.State.Strict as MS
 import           Control.State.Transition
-import Control.Monad.Trans.Class (lift)
+import Control.Monad.Trans.Class (MonadTrans, lift)
 import           Data.Bifunctor
     (second)
 import           Data.Default
@@ -67,6 +67,11 @@ deriving via Field "bkEnvironment" () (MonadState (GenT (MS.State (Bookkeeping s
 
 deriving via WriterLog (Field "bkTrace" () (MonadState (GenT (MS.State (Bookkeeping s)))))
   instance (sig ~ Signal s) => HasWriter "bkTrace" [(sig, [PredicateFailure s])] (GenM s)
+
+liftGenM
+  :: Gen a
+  -> GenM s a
+liftGenM = GenM . hoist generalize
 
 -- | Run the generator, given a generator for the environment and an initial generator state.
 runGenM

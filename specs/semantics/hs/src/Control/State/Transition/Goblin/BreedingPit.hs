@@ -78,4 +78,4 @@ breedStsGoblins env initState sigGen wantedFailure =
         IfObjective $ \fitvals -> maximum fitvals == minimum fitvals
   in do
     population <- runGA initialize evolve
-    print (bestFirst Minimizing $ population)
+    print (bestFirst Minimizing population)

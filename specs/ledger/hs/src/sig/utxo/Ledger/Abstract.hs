@@ -29,6 +29,10 @@ data TxIn = TxIn TxId Natural deriving (Show, Eq, Ord)
 -- |The output of a UTxO.
 data TxOut = TxOut Addr Value deriving (Show, Eq)
 
+-- | Returns the hashed 'addr' part of a 'TxOut'.
+getTxOutAddr :: TxOut -> Addr
+getTxOutAddr (TxOut addr _) = addr
+
 -- |The unspent transaction outputs.
 newtype UTxO = UTxO (Map TxIn TxOut) deriving (Show, Eq)
 
