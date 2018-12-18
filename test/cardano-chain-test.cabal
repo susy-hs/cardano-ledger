@@ -24,6 +24,7 @@ library
                        Test.Cardano.Chain.Common.Gen
                        Test.Cardano.Chain.Delegation.Example
                        Test.Cardano.Chain.Delegation.Gen
+                       Test.Cardano.Chain.FromSpec.Translate
                        Test.Cardano.Chain.Genesis.Example
                        Test.Cardano.Chain.Genesis.Gen
                        Test.Cardano.Chain.Genesis.Json
@@ -49,6 +50,8 @@ library
                      , cardano-prelude
                      , cardano-prelude-test
                      , containers
+                     , cs-blockchain
+                     , cs-ledger
                      , cryptonite
                      , formatting
                      , hedgehog
