@@ -48,6 +48,8 @@ where
 
 import Cardano.Prelude
 
+import Codec.Serialise.Class (Serialise)
+import qualified Codec.Serialise.Class as Serialise
 import Control.Monad.Except (MonadError(..), liftEither)
 import Formatting (bprint, build, int, shown)
 import qualified Formatting.Buildable as B
@@ -125,6 +127,15 @@ import Cardano.Crypto
 
 
 type Block = ABlock ()
+
+instance Serialise Block where
+  encode block =
+    encodeListLen 3
+      <> encode (blockHeader block)
+      <> encode (blockBody block)
+      <> encode (blockExtraData block)
+
+  decode = void <$> decodeABlock
 
 data ABlock a = ABlock
   { blockHeader     :: AHeader a

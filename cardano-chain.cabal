@@ -135,6 +135,7 @@ library
                      , mtl
                      , resourcet
                      , servant
+                     , serialise
                      , streaming
                      , streaming-binary
                      , streaming-bytestring

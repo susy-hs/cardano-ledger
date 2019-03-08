@@ -10,6 +10,8 @@ where
 
 import Cardano.Prelude
 
+import Codec.Serialise.Class (Serialise)
+import qualified Codec.Serialise.Class as Serialise
 import Formatting (bprint, build)
 import qualified Formatting.Buildable as B
 
@@ -29,6 +31,12 @@ instance B.Buildable ExtraBodyData where
     | otherwise = bprint ("extra data has attributes: " . build) attrs
 
 instance Bi ExtraBodyData where
+  encode ebd = encodeListLen 1 <> encode (ebdAttributes ebd)
+  decode = do
+    enforceSize "ExtraBodyData" 1
+    ExtraBodyData <$> decode
+
+instance Serialise ExtraBodyData where
   encode ebd = encodeListLen 1 <> encode (ebdAttributes ebd)
   decode = do
     enforceSize "ExtraBodyData" 1

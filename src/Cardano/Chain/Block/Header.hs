@@ -6,9 +6,13 @@
 {-# LANGUAGE FlexibleInstances    #-}
 {-# LANGUAGE LambdaCase           #-}
 {-# LANGUAGE OverloadedStrings    #-}
+{-# LANGUAGE StandaloneDeriving   #-}
 {-# LANGUAGE TypeApplications     #-}
 {-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE TypeSynonymInstances #-}
+
+-- Need this for the Serialise (AbstractHash algo a) instance
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Cardano.Chain.Block.Header
   ( Header
@@ -50,29 +54,25 @@ module Cardano.Chain.Block.Header
   )
 where
 
+import Cardano.Crypto (AbstractHash (..))
 import Cardano.Prelude
 
+import Codec.Serialise.Class (Serialise (..))
 import Control.Monad.Except (MonadError, liftEither)
+import Crypto.Hash (HashAlgorithm)
+import qualified Crypto.Hash as Hash
+import qualified Data.ByteArray as ByteArray
 import qualified Data.ByteString as BS
 import Formatting (Format, bprint, build, int)
 import qualified Formatting.Buildable as B
 
 import Cardano.Binary.Class
-  ( Annotated(..)
-  , Bi(..)
-  , ByteSpan
-  , Decoded(..)
-  , Decoder
-  , DecoderError(..)
-  , Encoding
-  , annotatedDecoder
-  , decodeAnnotated
-  , dropBytes
-  , dropInt32
-  , encodeListLen
-  , enforceSize
-  , serializeEncoding
+  ( Annotated(..), Bi, ByteSpan, Decoded(..), Decoder, DecoderError(..)
+  , Encoding , annotatedDecoder, decodeAnnotated, dropBytes, dropInt32
+  , encodeListLen, enforceSize, serializeEncoding
   )
+import qualified Cardano.Binary.Class as Bi
+
 import Cardano.Chain.Block.Body (Body)
 import Cardano.Chain.Block.Boundary
   (dropBoundaryConsensusData, dropBoundaryExtraHeaderData)
@@ -161,11 +161,11 @@ instance B.Buildable Header where
 instance Bi Header where
   encode h =
     encodeListLen 5
-      <> encode (headerProtocolMagicId h)
-      <> encode (headerPrevHash h)
-      <> encode (headerProof h)
-      <> encode (headerConsensusData h)
-      <> encode (headerExtraData h)
+      <> Bi.encode (headerProtocolMagicId h)
+      <> Bi.encode (headerPrevHash h)
+      <> Bi.encode (headerProof h)
+      <> Bi.encode (headerConsensusData h)
+      <> Bi.encode (headerExtraData h)
 
   decode = void <$> decodeAHeader
 
@@ -175,7 +175,7 @@ decodeAHeader = do
     annotatedDecoder $ do
       enforceSize "Header" 5
       (,,,,)
-        <$> decode
+        <$> Bi.decode
         <*> decodeAnnotated
         <*> decodeAnnotated
         <*> decodeAConsensus
@@ -323,7 +323,7 @@ verifyHeader pm header = do
   consensus = headerConsensusData header
 
 encodeHeader :: Header -> Encoding
-encodeHeader h = encodeListLen 2 <> encode (1 :: Word) <> encode h
+encodeHeader h = encodeListLen 2 <> Bi.encode (1 :: Word) <> Bi.encode h
 
 decodeHeader :: Decoder s (Maybe Header)
 decodeHeader = do
@@ -332,7 +332,7 @@ decodeHeader = do
     0 -> do
       void dropBoundaryHeader
       pure Nothing
-    1 -> Just <$!> decode
+    1 -> Just <$!> Bi.decode
     t -> cborError $ DecoderErrorUnknownTag "Header" (fromIntegral t)
 
 --------------------------------------------------------------------------------
@@ -345,6 +345,21 @@ type HeaderHash = Hash Header
 -- | Specialized formatter for 'HeaderHash'
 headerHashF :: Format r (HeaderHash -> r)
 headerHashF = build
+
+
+-- This instance is a direct copy from the `Bi` instance implemented in the
+-- `cardano-sl-crypto` package. It would be to fix/imporove this.
+instance (Typeable algo, Typeable a, HashAlgorithm algo) => Serialise (AbstractHash algo a) where
+    encode (AbstractHash digest) = encode (ByteArray.convert digest :: BS.ByteString)
+    -- FIXME bad decode: it reads an arbitrary-length byte string.
+    -- Better instance: know the hash algorithm up front, read exactly that
+    -- many bytes, fail otherwise. Then convert to a digest.
+    decode = do
+        bs <- Bi.decode @ByteString
+        toCborError $ case Hash.digestFromByteString bs of
+            Nothing -> Left ("AbstractHash.decode: invalid digest" :: Text)
+            Just x  -> Right (AbstractHash x)
+
 
 -- | These bytes must be prepended when hashing raw boundary header data
 --
@@ -373,7 +388,7 @@ dropBoundaryHeader = do
   enforceSize "BoundaryHeader" 5
   dropInt32
   -- HeaderHash
-  hh <- decode
+  hh <- Bi.decode
   -- BoundaryBodyProof
   dropBytes
   dropBoundaryConsensusData
@@ -410,16 +425,16 @@ instance B.Buildable BlockSignature where
 
 instance Bi BlockSignature where
   encode input = case input of
-    BlockSignature sig -> encodeListLen 2 <> encode (0 :: Word8) <> encode sig
+    BlockSignature sig -> encodeListLen 2 <> Bi.encode (0 :: Word8) <> Bi.encode sig
     -- Tag 1 was previously used for BlockPSignatureLight
     BlockPSignatureHeavy pxy ->
-      encodeListLen 2 <> encode (2 :: Word8) <> encode pxy
+      encodeListLen 2 <> Bi.encode (2 :: Word8) <> Bi.encode pxy
 
   decode = do
     enforceSize "BlockSignature" 2
-    decode >>= \case
-      0 -> BlockSignature <$> decode
-      2 -> BlockPSignatureHeavy <$> decode
+    Bi.decode >>= \case
+      0 -> BlockSignature <$> Bi.decode
+      2 -> BlockPSignatureHeavy <$> Bi.decode
       t -> cborError $ DecoderErrorUnknownTag "BlockSignature" t
 
 --------------------------------------------------------------------------------
@@ -433,7 +448,7 @@ recoverSignedBytes h = Annotated toSign bytes
   bytes = BS.concat
     [ "\133"
     -- This is the value of Codec.CBOR.Write.toLazyByteString (encodeListLen 5)
-    -- It is hard coded here because the signed bytes included it as an implementation artifact
+    -- It is hard coded here because the signed bytes included it as an implementation artifactk
     , (annotation . aHeaderPrevHash) h
     , (annotation . aHeaderProof) h
     , (annotation . aConsensusSlot . headerConsensusData) h
@@ -460,15 +475,15 @@ data ToSign = ToSign
 instance Bi ToSign where
   encode mts =
     encodeListLen 5
-      <> encode (_msHeaderHash mts)
-      <> encode (_msBodyProof mts)
-      <> encode (_msSlot mts)
-      <> encode (_msChainDiff mts)
-      <> encode (_msExtraHeader mts)
+      <> Bi.encode (_msHeaderHash mts)
+      <> Bi.encode (_msBodyProof mts)
+      <> Bi.encode (_msSlot mts)
+      <> Bi.encode (_msChainDiff mts)
+      <> Bi.encode (_msExtraHeader mts)
 
   decode = do
     enforceSize "ToSign" 5
-    ToSign <$> decode <*> decode <*> decode <*> decode <*> decode
+    ToSign <$> Bi.decode <*> Bi.decode <*> Bi.decode <*> Bi.decode <*> Bi.decode
 
 
 --------------------------------------------------------------------------------
@@ -498,7 +513,7 @@ data AConsensusData a = AConsensusData
 decodeAConsensus :: Decoder s (AConsensusData ByteSpan)
 decodeAConsensus = do
   enforceSize "ConsensusData" 4
-  AConsensusData <$> decodeAnnotated <*> decode <*> decodeAnnotated <*> decode
+  AConsensusData <$> decodeAnnotated <*> Bi.decode <*> decodeAnnotated <*> Bi.decode
 
 consensusSlot :: AConsensusData a -> SlotId
 consensusSlot = unAnnotated . aConsensusSlot
@@ -509,10 +524,10 @@ consensusDifficulty = unAnnotated . aConsensusDifficulty
 instance Bi ConsensusData where
   encode cd =
     encodeListLen 4
-      <> encode (consensusSlot cd)
-      <> encode (consensusLeaderKey cd)
-      <> encode (consensusDifficulty cd)
-      <> encode (consensusSignature cd)
+      <> Bi.encode (consensusSlot cd)
+      <> Bi.encode (consensusLeaderKey cd)
+      <> Bi.encode (consensusDifficulty cd)
+      <> Bi.encode (consensusSignature cd)
 
   decode = (fmap.fmap) (const ()) decodeAConsensus
 

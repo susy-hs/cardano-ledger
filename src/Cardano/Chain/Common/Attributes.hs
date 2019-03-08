@@ -28,6 +28,8 @@ where
 import Cardano.Prelude
 import qualified Prelude
 
+import Codec.Serialise.Class (Serialise)
+import qualified Codec.Serialise.Class as Serialise
 import Data.Aeson (FromJSON(..), ToJSON(..))
 import Data.Aeson.TH (defaultOptions, deriveJSON)
 import Data.ByteString.Base64.Type (getByteString64, makeByteString64)
@@ -49,6 +51,8 @@ newtype UnparsedFields =
   deriving (Eq, Ord, Show, Generic)
   deriving newtype HeapWords
   deriving anyclass NFData
+
+instance Serialise UnparsedFields where
 
 instance FromJSON UnparsedFields where
   parseJSON v =
@@ -75,6 +79,10 @@ data Attributes h = Attributes
   -- ^ Remaining, unparsed fields
   } deriving (Eq, Ord, Generic)
     deriving anyclass NFData
+
+instance Serialise (Attributes ()) where
+  encode = encodeAttributes []
+  decode = decodeAttributes () $ \_ _ _ -> pure Nothing
 
 instance Show h => Show (Attributes h) where
   show attr =
