@@ -1,6 +1,5 @@
-{ system ? builtins.currentSystem
-, config ? {}
-, pkgs ? import (import ../nix/fetch-nixpkgs.nix) { inherit system config; }
+{ chainPackages ? import ../.. { }
+, pkgs ? chainPackages._lib.pkgs
 }:
 
 with pkgs.lib;
