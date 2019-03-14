@@ -40,7 +40,8 @@ main = do
 
   cacheUploadStep cacheConfig
 
-  when (buildResult == ExitSuccess) coverageUploadStep
+  when (buildResult == ExitSuccess && fmap bkBranch bk == Just mainlineBranch) $
+    coverageUploadStep "CARDANO_CHAIN" ["cardano-chain", "cardano-chain-test"]
 
   exitWith buildResult
  where
@@ -67,18 +68,17 @@ buildStep testArgs = do
       ++ maybe [] ("--ta" :) testArgs
 
 -- | Upload coverage information to coveralls
-coverageUploadStep :: IO ()
-coverageUploadStep = do
+coverageUploadStep :: Text -> [Text] -> IO ()
+coverageUploadStep envPrefix components = do
   echo "--- Uploading Coverage Information"
-  need "COVERALLS_REPO_TOKEN" >>= \case
-    Nothing -> printf
-      "Missing coverall repo token. Not uploading coverage information.\n"
+  let var = envPrefix <> "_COVERALLS_REPO_TOKEN"
+  need var >>= \case
+    Nothing -> do
+      printf ("Missing coverall repo token in "%s%". ") var
+      printf "Not uploading coverage information.\n"
     Just repoToken -> do
-      result <- proc
-        "shc"
-        ["--repo-token", repoToken, "cardano-chain", "cardano-chain-test"]
-        empty
-      case result of
+      let shcArgs = ["--repo-token", repoToken] ++ components
+      proc "shc" shcArgs empty >>= \case
         ExitSuccess   -> printf "Coverage information upload successful.\n"
         ExitFailure _ -> printf "Coverage information upload failed.\n"
 
