@@ -1,6 +1,5 @@
-{ system ? builtins.currentSystem
-, config ? {}
-, pkgs ? import (import ../nix/fetch-nixpkgs.nix) { inherit system config; }
+{ chainPackages ? import ../.. { }
+, pkgs ? chainPackages._lib.pkgs
 , buildTools ? with pkgs; [ git nix gnumake ]
 }:
 
@@ -8,18 +7,18 @@ with pkgs.lib;
 with pkgs;
 
 let
-  cache-s3 = callPackage ./cache-s3.nix {};
-
-  stack-hpc-coveralls = pkgs.haskell.lib.dontCheck
-    (haskell.packages.ghc844.callPackage ./stack-hpc-coveralls.nix {});
-
   stackRebuild = runCommand "stack-rebuild" {} ''
     ${haskellPackages.ghcWithPackages (ps: [ps.turtle ps.safe ps.transformers])}/bin/ghc -o $out ${./rebuild.hs}
   '';
 
+  buildTools' = buildTools ++ [
+     chainPackages._lib.cache-s3
+     chainPackages._lib.stack-hpc-coveralls
+     stack gnused coreutils
+  ];
 in
   writeScript "stack-rebuild-wrapped" ''
     #!${stdenv.shell}
-    export PATH=${lib.makeBinPath ([ cache-s3 stack gnused coreutils stack-hpc-coveralls ] ++ buildTools)}
+    export PATH=${lib.makeBinPath buildTools'}
     exec ${stackRebuild} "$@"
   ''
