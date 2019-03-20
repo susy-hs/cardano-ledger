@@ -62,6 +62,7 @@ import Cardano.Chain.Txp
   , toCompactTxIn
   , toCompactTxOut
   )
+import qualified Cardano.Chain.Txp as UTxO (fromList)
 import Cardano.Crypto (Hash, ProtocolMagicId, decodeHash, sign)
 
 import Test.Cardano.Chain.Common.Gen (genAddress, genLovelace, genMerkleRoot)
