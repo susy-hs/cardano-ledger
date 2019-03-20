@@ -3,6 +3,7 @@ resolver: https://raw.githubusercontent.com/input-output-hk/cardano-prelude/2256
 packages:
   - .
   - test
+  - heap-profiler
 
 extra-deps:
   - git: https://github.com/input-output-hk/cardano-prelude

@@ -20,6 +20,7 @@ module Test.Cardano.Chain.Txp.Gen
   , genTxSigData
   , genTxUndo
   , genTxWitness
+  , genUTxO
   )
 where
 
@@ -53,9 +54,11 @@ import Cardano.Chain.Txp
   , TxWitness
   , TxpConfiguration(..)
   , TxpUndo
+  , UTxO
   , mkTxAux
   , mkTxPayload
   )
+import qualified Cardano.Chain.Txp as UTxO (fromList)
 import Cardano.Crypto (Hash, ProtocolMagicId, decodeHash, sign)
 
 import Test.Cardano.Chain.Common.Gen (genAddress, genLovelace, genMerkleRoot)
@@ -110,6 +113,12 @@ genTxOutAux = TxOutAux <$> genTxOut
 
 genTxOutList :: Gen (NonEmpty TxOut)
 genTxOutList = Gen.nonEmpty (Range.linear 1 100) genTxOut
+
+genUTxO :: Gen UTxO
+genUTxO = UTxO.fromList <$> Gen.list (Range.linear 1 100) genTxInTxOutPair
+  where
+    genTxInTxOutPair :: Gen (TxIn, TxOut)
+    genTxInTxOutPair = (,) <$> genTxIn <*> genTxOut
 
 genTxpConfiguration :: Gen TxpConfiguration
 genTxpConfiguration = do
