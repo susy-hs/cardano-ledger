@@ -6,6 +6,7 @@ packages:
   - crypto
   - crypto/test
   - validate-mainnet
+  - heap-profiler
 
 extra-deps:
   - git: https://github.com/input-output-hk/cardano-prelude
