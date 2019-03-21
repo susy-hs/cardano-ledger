@@ -7,6 +7,7 @@ packages:
   - crypto/test
   - validate-mainnet
   - heap-profiler
+  - heap-datasize
 
 extra-deps:
   - git: https://github.com/input-output-hk/cardano-prelude
@@ -33,6 +34,13 @@ extra-deps:
 
   - sequence-0.9.8
   - tasty-hedgehog-0.2.0.0
+
+  - git: https://github.com/mhuesch/ghc-datasize
+    commit: 32ffd80b89236d36c4855673b7bcd6e025dc57e1
+
+  - git: https://github.com/mhuesch/ghc-heap-view
+    commit: 36b0e5ba119b837ab7123e1073e082844c5a5501
+
   # To be able to use `stack hoogle`
   - haskell-src-exts-1.21.0
 
