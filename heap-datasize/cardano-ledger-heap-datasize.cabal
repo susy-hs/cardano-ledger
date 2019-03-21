@@ -26,6 +26,7 @@ executable heap-datasize
                      , cardano-ledger
                      , cardano-ledger-test
                      , cardano-prelude
+                     , containers
                      , ghc-datasize
                      , hedgehog
 
