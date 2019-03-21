@@ -4,14 +4,17 @@ module Main
 where
 
 import Cardano.Prelude
-
-import qualified Hedgehog.Gen as Gen
-
 import Cardano.Chain.Txp (UTxO (..))
 
-import Test.Cardano.Chain.Txp.Gen (genUTxO)
+import Prelude (error)
+import Control.Concurrent (threadDelay)
+import Data.Aeson
+import qualified Data.ByteString.Lazy as BL
 
 main :: IO ()
 main = do
-  UTxO utxo <- Gen.sample genUTxO
-  print utxo
+  let fname = "utxo.json"
+  mbUtxoMap <- (\x -> UTxO <$> decode x) <$> BL.readFile fname
+  case mbUtxoMap of
+    Nothing -> error $ "couldn't json decode " <> fname
+    Just (UTxO utxoMap) -> print utxoMap >> threadDelay 1000000
