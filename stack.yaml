@@ -39,7 +39,7 @@ extra-deps:
   - tasty-hedgehog-0.2.0.0
 
   - git: https://github.com/mhuesch/ghc-datasize
-    commit: 32ffd80b89236d36c4855673b7bcd6e025dc57e1
+    commit: bbb08cedaf4d337878e39744ad1db6dbd18ef94d
 
   - git: https://github.com/mhuesch/ghc-heap-view
     commit: 36b0e5ba119b837ab7123e1073e082844c5a5501
