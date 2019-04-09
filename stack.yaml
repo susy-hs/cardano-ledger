@@ -2,6 +2,7 @@ resolver: https://raw.githubusercontent.com/input-output-hk/cardano-prelude/2256
 
 packages:
   - .
+  - bcv
   - test
   - crypto
   - crypto/test

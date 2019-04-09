@@ -1,6 +1,7 @@
 packages:
   crypto crypto/test
   ./     ./test
+  bcv
 
 package cardano-ledger
   tests: True
