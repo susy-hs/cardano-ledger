@@ -1,4 +1,4 @@
-resolver: https://raw.githubusercontent.com/input-output-hk/cardano-prelude/2256fd727c5f92e6218afdcf8cddf6e01c4a9dcd/snapshot.yaml
+resolver: https://raw.githubusercontent.com/input-output-hk/cardano-prelude/b25eed0ab3b6da51bc10970759d491331e56c822/snapshot.yaml
 
 packages:
   - .
@@ -58,4 +58,7 @@ extra-deps:
 
 
 nix:
-  shell-file: scripts/nix/stack-shell.nix
+  packages:
+    - zlib
+    - openssl
+    - git
