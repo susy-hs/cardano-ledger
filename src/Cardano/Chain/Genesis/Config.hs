@@ -7,6 +7,7 @@
 module Cardano.Chain.Genesis.Config
   ( StaticConfig(..)
   , Config(..)
+  , ConfigurationError
   , configGenesisHeaderHash
   , configK
   , configSlotSecurityParam

@@ -59,6 +59,8 @@ library
                        Cardano.Chain.Common.TxFeePolicy
                        Cardano.Chain.Common.TxSizeLinear
 
+                       Cardano.Chain.Conversion
+
                        Cardano.Chain.Delegation.Certificate
                        Cardano.Chain.Delegation.Payload
                        Cardano.Chain.Delegation.Validation
@@ -119,6 +121,7 @@ library
                      , cardano-binary
                      , cardano-crypto-wrapper
                      , cardano-prelude
+                     , cardano-shell
                      , containers
                      , concurrency
                      , cryptonite
@@ -134,6 +137,7 @@ library
                      , streaming-binary
                      , streaming-bytestring
                      , text
+                     , transformers
                      , time
                      , vector
 
