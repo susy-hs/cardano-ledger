@@ -38,7 +38,6 @@ import Data.Coerce (coerce)
 import Data.Time (UTCTime)
 import Formatting (build, bprint, string)
 import qualified Formatting.Buildable as B
-import System.FilePath ((</>))
 import System.IO.Error (userError)
 
 import Cardano.Binary (Raw)
@@ -205,8 +204,6 @@ configAvvmDistr = gdAvvmDistr . configGenesisData
 mkConfigFromStaticConfig
   :: (MonadError ConfigurationError m, MonadIO m)
   => RequiresNetworkMagic
-  -> FilePath
-  -- ^ Directory where 'configuration.yaml' is stored
   -> Maybe UTCTime
   -- ^ Optional system start time.
   --   It must be given when the genesis spec uses a testnet initializer.
@@ -214,7 +211,7 @@ mkConfigFromStaticConfig
   -- ^ Optional seed which overrides one from testnet initializer if provided
   -> StaticConfig
   -> m Config
-mkConfigFromStaticConfig rnm confDir mSystemStart mSeed = \case
+mkConfigFromStaticConfig rnm mSystemStart mSeed = \case
   -- If a 'GenesisData' source file is given, we check its hash against the
   -- given expected hash, parse it, and use the GenesisData to fill in all of
   -- the obligations.
@@ -224,7 +221,7 @@ mkConfigFromStaticConfig rnm confDir mSystemStart mSeed = \case
 
     isNothing mSeed `orThrowError` MeaninglessSeed
 
-    mkConfigFromFile rnm (confDir </> fp) (Just expectedHash)
+    mkConfigFromFile rnm fp (Just expectedHash)
 
 
   -- If a 'GenesisSpec' is given, we ensure we have a start time (needed if it's
