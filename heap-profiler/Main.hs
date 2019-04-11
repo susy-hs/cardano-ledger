@@ -9,12 +9,14 @@ import Cardano.Chain.Txp (UTxO (..))
 import Prelude (error)
 import Control.Concurrent (threadDelay)
 import Data.Aeson
-import qualified Data.ByteString.Lazy as BL
+import System.Exit (exitFailure)
+import Text.Read (readEither)
 
 main :: IO ()
 main = do
-  let fname = "utxo.json"
-  mbUtxoMap <- (\x -> UTxO <$> decode x) <$> BL.readFile fname
-  case mbUtxoMap of
-    Nothing -> error $ "couldn't json decode " <> fname
-    Just (UTxO utxoMap) -> print utxoMap >> threadDelay 1000000
+  pure ()
+  -- let fname = "utxo.txt"
+  -- eutxo <- readEither . show <$> readFile fname
+  -- case eutxo of
+  --   Left err -> print err >> exitFailure
+  --   Right (UTxO utxoMap) -> print utxoMap >> threadDelay 1000000
