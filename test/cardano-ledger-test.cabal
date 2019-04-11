@@ -39,6 +39,7 @@ library
                        Test.Cardano.Chain.Txp.Example
                        Test.Cardano.Chain.Txp.Gen
                        Test.Cardano.Chain.Txp.Json
+                       Test.Cardano.Chain.Txp.Validation
                        Test.Cardano.Chain.Update.Example
                        Test.Cardano.Chain.Update.Gen
                        Test.Cardano.Chain.Update.Properties
@@ -54,12 +55,16 @@ library
                      , cardano-crypto
                      , cardano-crypto-test
                      , cardano-crypto-wrapper
+                     , cardano-mainnet-mirror
                      , cardano-prelude
                      , cardano-prelude-test
                      , containers
+                     , cryptonite
+                     , filepath
                      , formatting
                      , hedgehog
                      , optparse-applicative
+                     , resourcet
                      , text
                      , time
                      , vector
