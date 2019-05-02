@@ -80,8 +80,7 @@ import Cardano.Chain.Common
   , UnparsedFields(..)
   , mkStakeholderId
   )
-import qualified Cardano.Chain.Delegation.Payload as DlgPayload
-import qualified Cardano.Chain.Delegation.Validation.Activation as Activation
+import qualified Cardano.Chain.Delegation as Delegation
 import qualified Cardano.Chain.Delegation.Validation.Interface as DI
 import qualified Cardano.Chain.Delegation.Validation.Scheduling as Scheduling
 import Cardano.Chain.Epoch.File (ParseError, mainnetEpochSlots)
@@ -409,8 +408,7 @@ updateBody env bs b = do
     , delegationState = delegationState'
     }
  where
-  BodyEnvironment { protocolMagic, k, numGenKeys, currentEpoch }
-    = env
+  BodyEnvironment { protocolMagic, k, numGenKeys, currentEpoch } = env
 
   BodyState { utxo, updateState, delegationState } = bs
 
@@ -419,15 +417,16 @@ updateBody env bs b = do
 
   UnparsedFields attributes = attrRemain $ blockAttributes b
 
-  currentSlot = blockSlot b
+  currentSlot   = blockSlot b
 
-  certificates = DlgPayload.getPayload $ blockDlgPayload b
+  certificates  = Delegation.getPayload $ blockDlgPayload b
 
-  txs         = aUnTxPayload $ blockTxPayload b
+  txs           = aUnTxPayload $ blockTxPayload b
 
   delegationEnv = DI.Environment
     { DI.protocolMagic = getAProtocolMagicId protocolMagic
-    , DI.allowedDelegators = M.keysSet (DI.delegationMap delegationState)
+    , DI.allowedDelegators = Delegation.keysSet
+      (DI.delegationMap delegationState)
     , DI.k           = k
     , DI.currentEpoch = currentEpoch
     , DI.currentSlot = currentSlot
@@ -458,7 +457,7 @@ data HeaderEnvironment = HeaderEnvironment
   { protocolMagic :: !(Annotated ProtocolMagicId ByteString)
   , k             :: !BlockCount
   , numGenKeys    :: !Word8
-  , delegationMap :: !(Map StakeholderId StakeholderId)
+  , delegationMap :: !Delegation.Map
   , lastSlot      :: !FlatSlotId
   }
 
@@ -502,7 +501,7 @@ data EpochEnvironment = EpochEnvironment
   { protocolMagic :: !(Annotated ProtocolMagicId ByteString)
   , k             :: !BlockCount
   , numGenKeys    :: !Word8
-  , delegationMap :: !(Map StakeholderId StakeholderId)
+  , delegationMap :: !Delegation.Map
   , currentEpoch  :: !EpochIndex
   }
 
@@ -604,8 +603,7 @@ updateBlock config cvs b = do
           "updateBody: Too many genesis keys"
         | otherwise -> fromIntegral n
 
-  delegationMap =
-    Activation.asDelegationMap . DI.isActivationState $ cvsDelegationState cvs
+  delegationMap = DI.delegationMap $ cvsDelegationState cvs
 
 
 --------------------------------------------------------------------------------

@@ -39,9 +39,9 @@ extra-deps:
   - git: https://github.com/input-output-hk/cardano-shell
     commit: 0c3e043d0d3789d0b251938c2f4b481891b95e0e
 
-  - time-units-1.0.0@sha256:27cf54091c4a0ca73d504fc11d5c31ab4041d17404fe3499945e2055697746c1
-  - ekg-0.4.0.15@sha256:f52d7c00654d72d2ab988255f30adba95a52484ac310bab9c136c64732e69f4b
-  - ekg-json-0.1.0.6@sha256:4ff2e9cac213a5868ae8b4a7c72a16a9a76fac14d944ae819b3d838a9725569b
+  - time-units-1.0.0
+  - ekg-0.4.0.15
+  - ekg-json-0.1.0.6
 
   - git: https://github.com/input-output-hk/iohk-monitoring-framework
     commit: 8614c66d9f13ad7bd68975700651a720a78d620e
@@ -55,8 +55,9 @@ extra-deps:
   # Extracted from cardano-sl since it's quite useful
   - git: https://github.com/input-output-hk/cardano-sl-x509
     commit: 71115d199368f1cc969a4936a856808539063253
-    subdirs:
-      - .
+
+  - git: https://github.com/ruhatch/bimap
+    commit: 7631a2598f1875cbec87d00136a4cd46489059ce
 
 nix:
   shell-file: scripts/nix/stack-shell.nix

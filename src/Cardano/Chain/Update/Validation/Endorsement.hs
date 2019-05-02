@@ -20,7 +20,7 @@ import qualified Data.Map.Strict as M
 import qualified Data.Set as Set
 
 import Cardano.Chain.Common
-import Cardano.Chain.Delegation.Validation.Activation (delegatorOf)
+import qualified Cardano.Chain.Delegation as Delegation
 import Cardano.Chain.Slotting
 import Cardano.Chain.Update.Proposal (UpId)
 import Cardano.Chain.Update.ProtocolParameters
@@ -33,7 +33,7 @@ data Environment = Environment
   { k                                 :: !BlockCount
   -- ^ Chain stability parameter.
   , currentSlot                       :: !FlatSlotId
-  , delegationMap                     :: !(Map StakeholderId StakeholderId)
+  , delegationMap                     :: !Delegation.Map
   , adoptedProtocolParameters         :: !ProtocolParameters
   , confirmedProposals                :: !(Map UpId FlatSlotId)
   , registeredProtocolUpdateProposals :: !Registration.ProtocolUpdateProposals
@@ -131,7 +131,7 @@ register env st endorsement =
 
   State { candidateProtocolVersions, registeredEndorsements } = st
 
-  registeredEndorsements' = case delegatorOf vk delegationMap of
+  registeredEndorsements' = case Delegation.lookupR vk delegationMap of
     Just vkS -> Set.insert (Endorsement epv vkS) registeredEndorsements
     Nothing  -> registeredEndorsements
       -- Note that we do not throw an error if there is no corresponding
