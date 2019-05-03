@@ -106,7 +106,7 @@ import qualified Cardano.Chain.Update.Validation.Interface as UPI
 import Cardano.Crypto
   ( AProtocolMagic(..)
   , ProtocolMagicId
-  , PublicKey
+  , VerificationKey
   , hashRaw
   , hashDecoded
   )
@@ -128,12 +128,12 @@ data SigningHistory = SigningHistory
 
 -- | Update the `SigningHistory` with a new signer, removing the oldest value if
 --   the sequence is @K@ blocks long
-updateSigningHistory :: PublicKey -> SigningHistory -> SigningHistory
-updateSigningHistory pk sh
+updateSigningHistory :: VerificationKey -> SigningHistory -> SigningHistory
+updateSigningHistory vk sh
   | length (shSigningQueue sh) < fromIntegral (unBlockCount $ shK sh) = sh & addStakeholderIn
   | otherwise = sh & addStakeholderIn & removeStakeholderOut
  where
-  stakeholderIn = mkStakeholderId pk
+  stakeholderIn = mkStakeholderId vk
 
   addStakeholderIn :: SigningHistory -> SigningHistory
   addStakeholderIn sh' = sh'
@@ -236,7 +236,7 @@ data ChainValidationError
   | ChainValidationDelegationPayloadError Text
   -- ^ There is a problem with the delegation payload signature
 
-  | ChainValidationInvalidDelegation PublicKey PublicKey
+  | ChainValidationInvalidDelegation VerificationKey VerificationKey
   -- ^ The delegation used in the signature is not valid according to the ledger
 
   | ChainValidationGenesisHashMismatch GenesisHash GenesisHash
@@ -272,7 +272,7 @@ data ChainValidationError
   | ChainValidationSignatureLight
   -- ^ A block is using unsupported lightweight delegation
 
-  | ChainValidationTooManyDelegations PublicKey
+  | ChainValidationTooManyDelegations VerificationKey
   -- ^ The delegator for this block has delegated in too many recent blocks
 
   | ChainValidationUpdateError UPI.Error

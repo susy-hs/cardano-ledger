@@ -60,8 +60,8 @@ import Test.Cardano.Chain.Slotting.Gen
 import Test.Cardano.Crypto.Gen
   ( genAbstractHash
   , genHashRaw
-  , genPublicKey
-  , genSecretKey
+  , genVerificationKey
+  , genSigningKey
   , genSignature
   )
 
@@ -162,7 +162,7 @@ genProposal :: ProtocolMagicId -> Gen Proposal
 genProposal pm =
   mkProposal
     <$> genProposalBody
-    <*> genPublicKey
+    <*> genVerificationKey
     <*> genSignature pm genProposalBody
 
 genProposalBody :: Gen ProposalBody
@@ -182,4 +182,4 @@ genUpsData =
   Gen.map (Range.linear 0 20) ((,) <$> genSystemTag <*> genInstallerHash)
 
 genVote :: ProtocolMagicId -> Gen Vote
-genVote pm = mkVote pm <$> genSecretKey <*> genUpId pm <*> Gen.bool
+genVote pm = mkVote pm <$> genSigningKey <*> genUpId pm <*> Gen.bool

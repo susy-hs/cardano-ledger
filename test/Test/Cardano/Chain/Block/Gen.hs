@@ -39,7 +39,7 @@ import Cardano.Chain.Common (mkAttributes)
 import Cardano.Chain.Slotting
   (EpochIndex(..), EpochSlots, WithEpochSlots(WithEpochSlots))
 import Cardano.Chain.Ssc (SscPayload(..), SscProof(..))
-import Cardano.Crypto (ProtocolMagicId, createPsk, noPassSafeSigner, toPublic)
+import Cardano.Crypto (ProtocolMagicId, createPsk, noPassSafeSigner, toVerification)
 
 import Test.Cardano.Chain.Common.Gen (genChainDifficulty)
 import qualified Test.Cardano.Chain.Delegation.Gen as Delegation
@@ -50,8 +50,8 @@ import qualified Test.Cardano.Chain.Update.Gen as Update
 import Test.Cardano.Crypto.Gen
   ( genAbstractHash
   , genProxySignature
-  , genPublicKey
-  , genSecretKey
+  , genVerificationKey
+  , genSigningKey
   , genTextHash
   )
 
@@ -74,8 +74,8 @@ genBody pm =
 
 genHeader :: ProtocolMagicId -> EpochSlots -> Gen Header
 genHeader pm epochSlots = do
-  sk <- genSecretKey
-  let cert = createPsk pm (noPassSafeSigner sk) (toPublic sk) (EpochIndex 0)
+  sk <- genSigningKey
+  let cert = createPsk pm (noPassSafeSigner sk) (toVerification sk) (EpochIndex 0)
   mkHeaderExplicit pm
     <$> genHeaderHash
     <*> genChainDifficulty
@@ -90,7 +90,7 @@ genConsensusData :: ProtocolMagicId -> EpochSlots -> Gen ConsensusData
 genConsensusData pm epochSlots =
   consensusData
     <$> genFlatSlotId
-    <*> genPublicKey
+    <*> genVerificationKey
     <*> genChainDifficulty
     <*> genBlockSignature pm epochSlots
 
@@ -133,8 +133,8 @@ genBlockWithEpochSlots pm = do
 
 genBlock :: ProtocolMagicId -> EpochSlots -> Gen Block
 genBlock pm epochSlots = do
-  sk <- genSecretKey
-  let cert = createPsk pm (noPassSafeSigner sk) (toPublic sk) (EpochIndex 0)
+  sk <- genSigningKey
+  let cert = createPsk pm (noPassSafeSigner sk) (toVerification sk) (EpochIndex 0)
   mkBlockExplicit pm
     <$> Update.genProtocolVersion
     <*> Update.genSoftwareVersion

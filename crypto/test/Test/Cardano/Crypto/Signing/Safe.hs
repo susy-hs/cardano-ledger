@@ -19,11 +19,11 @@ import Cardano.Crypto.Signing
   , noPassSafeSigner
   , safeKeyGen
   , safeToPublic
-  , toPublic
+  , toVerification
   , withSafeSigner
   )
 
-import Test.Cardano.Crypto.Gen (genPassPhrase, genSecretKey)
+import Test.Cardano.Crypto.Gen (genPassPhrase, genSigningKey)
 
 
 --------------------------------------------------------------------------------
@@ -53,7 +53,7 @@ prop_invalidPassPhraseGivesNothing = property $ do
   (_, key)    <- liftIO $ safeKeyGen passPhrase
   withSafeSigner key (pure passPhrase') (assert . isNothing)
 
--- | Changing the 'PassPhrase' of an 'EncryptedSecretKey' leaves the 'PublicKey'
+-- | Changing the 'PassPhrase' of an 'EncryptedSigningKey' leaves the 'VerificationKey'
 --   the same
 prop_changingPassPhraseKeepsAddress :: Property
 prop_changingPassPhraseKeepsAddress = property $ do
@@ -64,14 +64,14 @@ prop_changingPassPhraseKeepsAddress = property $ do
     Nothing     -> failure
     Just newKey -> encToPublic oldKey === encToPublic newKey
 
--- | Encrypting a 'SecretKey' preserves the corresponding 'PublicKey'
-prop_encryptionPreservesPublicKey :: Property
-prop_encryptionPreservesPublicKey = property $ do
-  sk <- forAll genSecretKey
-  encToPublic (noPassEncrypt sk) === toPublic sk
+-- | Encrypting a 'SigningKey' preserves the corresponding 'VerificationKey'
+prop_encryptionPreservesVerificationKey :: Property
+prop_encryptionPreservesVerificationKey = property $ do
+  sk <- forAll genSigningKey
+  encToPublic (noPassEncrypt sk) === toVerification sk
 
--- | Making a 'SafeSigner' from a 'SecretKey' preserves the 'PublicKey'
-prop_safeSignerPreservesPublicKey :: Property
-prop_safeSignerPreservesPublicKey = property $ do
-  sk <- forAll genSecretKey
-  safeToPublic (noPassSafeSigner sk) === toPublic sk
+-- | Making a 'SafeSigner' from a 'SigningKey' preserves the 'VerificationKey'
+prop_safeSignerPreservesVerificationKey :: Property
+prop_safeSignerPreservesVerificationKey = property $ do
+  sk <- forAll genSigningKey
+  safeToPublic (noPassSafeSigner sk) === toVerification sk

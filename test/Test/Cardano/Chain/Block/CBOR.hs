@@ -69,7 +69,7 @@ import Cardano.Crypto
   , hash
   , noPassSafeSigner
   , proxySign
-  , toPublic
+  , toVerification
   )
 
 import Test.Cardano.Binary.Helpers.GoldenRoundTrip
@@ -86,7 +86,7 @@ import Test.Cardano.Chain.Slotting.Example (exampleSlotId, exampleFlatSlotId)
 import Test.Cardano.Chain.Slotting.Gen (feedPMEpochSlots, genWithEpochSlots)
 import Test.Cardano.Chain.UTxO.Example (exampleTxPayload, exampleTxProof)
 import qualified Test.Cardano.Chain.Update.Example as Update
-import Test.Cardano.Crypto.Example (examplePublicKey, exampleSecretKeys)
+import Test.Cardano.Crypto.Example (exampleVerificationKey, exampleSigningKeys)
 import Test.Cardano.Crypto.Gen (feedPM)
 import Test.Options (TestScenario, TSProperty, eachOfTS)
 
@@ -248,6 +248,7 @@ ts_roundTripConsensusData = eachOfTS
     (serializeEncoding . toCBORConsensusData es)
     (decodeFullDecoder "ConsensusData" $ fromCBORConsensusData es)
 
+
 --------------------------------------------------------------------------------
 -- ExtraBodyData
 --------------------------------------------------------------------------------
@@ -316,29 +317,29 @@ exampleHeader = mkHeaderExplicit
   exampleExtraHeaderData
  where
   pm          = ProtocolMagicId 7
-  [delegateSk, issuerSk] = exampleSecretKeys 5 2
+  [delegateSk, issuerSk] = exampleSigningKeys 5 2
   certificate = createPsk
     pm
     (noPassSafeSigner issuerSk)
-    (toPublic delegateSk)
+    (toVerification delegateSk)
     (EpochIndex 5)
 
 exampleBlockSignature :: BlockSignature
 exampleBlockSignature = BlockSignature sig
  where
   sig = proxySign pm SignProxyVK delegateSk psk exampleToSign
-  [delegateSk, issuerSk] = exampleSecretKeys 5 2
+  [delegateSk, issuerSk] = exampleSigningKeys 5 2
   psk = createPsk
     pm
     (noPassSafeSigner issuerSk)
-    (toPublic delegateSk)
+    (toVerification delegateSk)
     (EpochIndex 5)
   pm = ProtocolMagicId 7
 
 exampleConsensusData :: ConsensusData
 exampleConsensusData = consensusData
   (exampleFlatSlotId exampleEs)
-  examplePublicKey
+  exampleVerificationKey
   exampleChainDifficulty
   exampleBlockSignature
 

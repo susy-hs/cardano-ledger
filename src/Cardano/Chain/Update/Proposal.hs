@@ -60,7 +60,7 @@ import Cardano.Chain.Update.SystemTag (SystemTag)
 import Cardano.Crypto
   ( Hash
   , ProtocolMagicId
-  , PublicKey
+  , VerificationKey
   , SafeSigner
   , SignTag(SignUSProposal)
   , Signature
@@ -81,7 +81,7 @@ type UpId = Hash Proposal
 -- | Proposal for software update
 data AProposal a = AProposal
   { aBody      :: !(Annotated ProposalBody a)
-  , issuer     :: !PublicKey
+  , issuer     :: !VerificationKey
   -- ^ Who proposed this UP.
   , signature  :: !(Signature ProposalBody)
   , annotation :: !a
@@ -95,7 +95,7 @@ type Proposal = AProposal ()
 -- Proposal Constructors
 --------------------------------------------------------------------------------
 
-mkProposal :: ProposalBody -> PublicKey -> Signature ProposalBody -> Proposal
+mkProposal :: ProposalBody -> VerificationKey -> Signature ProposalBody -> Proposal
 mkProposal b k s = AProposal (Annotated b ()) k s ()
 
 signProposal :: ProtocolMagicId -> ProposalBody -> SafeSigner -> Proposal
@@ -135,7 +135,7 @@ instance FromCBOR Proposal where
 
 instance FromCBOR (AProposal ByteSpan) where
   fromCBOR = do
-    Annotated (pb, pk, sig) byteSpan <- annotatedDecoder $ do
+    Annotated (pb, vk, sig) byteSpan <- annotatedDecoder $ do
       enforceSize "Proposal" 7
       pb <- annotatedDecoder
         (   ProposalBody
@@ -145,10 +145,10 @@ instance FromCBOR (AProposal ByteSpan) where
         <*> fromCBOR
         <*> fromCBOR
         )
-      pk  <- fromCBOR
+      vk  <- fromCBOR
       sig <- fromCBOR
-      pure (pb, pk, sig)
-    pure $ AProposal pb pk sig byteSpan
+      pure (pb, vk, sig)
+    pure $ AProposal pb vk sig byteSpan
 
 instance Decoded (AProposal ByteString) where
   type BaseType (AProposal ByteString) = Proposal

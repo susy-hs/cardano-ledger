@@ -112,12 +112,12 @@ import Cardano.Crypto
   , ProxySignature
   , AProxySignature(..)
   , AProxyVerificationKey(..)
-  , PublicKey
-  , SecretKey
+  , VerificationKey
+  , SigningKey
   , SignTag(..)
   , hashHexF
   , proxySign
-  , pskIssuerPk
+  , pskIssuerVK
   , unsafeAbstractHash
   )
 
@@ -233,10 +233,10 @@ mkHeader
   -- epoch to which it belongs and the offset within that epoch (counted in
   -- number of slots).
   -> FlatSlotId
-  -> SecretKey
-  -- ^ The 'SecretKey' used for signing the block
+  -> SigningKey
+  -- ^ The 'SigningKey' used for signing the block
   -> Delegation.Certificate
-  -- ^ A certificate of delegation from a genesis key to the 'SecretKey'
+  -- ^ A certificate of delegation from a genesis key to the 'SigningKey'
   -> Body
   -> ExtraHeaderData
   -> Header
@@ -266,10 +266,10 @@ mkHeaderExplicit
   -> EpochSlots
   -- ^ See 'mkHeader'.
   -> FlatSlotId
-  -> SecretKey
-  -- ^ The 'SecretKey' used for signing the block
+  -> SigningKey
+  -- ^ The 'SigningKey' used for signing the block
   -> Delegation.Certificate
-  -- ^ A certificate of delegation from a genesis key to the 'SecretKey'
+  -- ^ A certificate of delegation from a genesis key to the 'SigningKey'
   -> Body
   -> ExtraHeaderData
   -> Header
@@ -291,18 +291,18 @@ mkHeaderExplicit pm prevHash difficulty epochSlots slotId sk dlgCert body extra
   signature =
     BlockSignature $ proxySign pm SignMainBlockHeavy sk dlgCert toSign
 
-  leaderPk  = pskIssuerPk dlgCert
+  leaderVK  = pskIssuerVK dlgCert
 
-  consensus = consensusData slotId leaderPk difficulty signature
+  consensus = consensusData slotId leaderVK difficulty signature
 
 headerSlot :: AHeader a -> FlatSlotId
 headerSlot = consensusSlot . headerConsensusData
 
-headerIssuer :: AHeader a -> PublicKey
+headerIssuer :: AHeader a -> VerificationKey
 headerIssuer h = case headerSignature h of
-  BlockSignature psig -> pskDelegatePk $ psigPsk psig
+  BlockSignature psig -> pskDelegateVK $ psigPsk psig
 
-headerLeaderKey :: AHeader a -> PublicKey
+headerLeaderKey :: AHeader a -> VerificationKey
 headerLeaderKey = consensusLeaderKey . headerConsensusData
 
 headerDifficulty :: AHeader a -> ChainDifficulty
@@ -493,19 +493,19 @@ type ConsensusData = AConsensusData ()
 
 consensusData
   :: FlatSlotId
-  -> PublicKey
+  -> VerificationKey
   -> ChainDifficulty
   -> BlockSignature
   -> ConsensusData
-consensusData slotNo pk cd bs =
-  AConsensusData (Annotated slotNo ()) pk (Annotated cd ()) bs
+consensusData slotNo vk cd bs =
+  AConsensusData (Annotated slotNo ()) vk (Annotated cd ()) bs
 
 data AConsensusData a = AConsensusData
   { aConsensusSlot       :: !(Annotated FlatSlotId a)
   -- ^ Id of the slot for which this block was generated
-  , consensusLeaderKey   :: !PublicKey
+  , consensusLeaderKey   :: !VerificationKey
   -- ^ Public key of the slot leader. It's essential to have it here, because
-  --   FTS gives us only hash of public key (aka 'StakeholderId').
+  --   FTS gives us only hash of verification key (aka 'StakeholderId').
   , aConsensusDifficulty :: !(Annotated ChainDifficulty a)
   -- ^ Difficulty of chain ending in this block
   , consensusSignature   :: !BlockSignature
@@ -519,11 +519,11 @@ fromCBORAConsensus epochSlots = do
   -- Next, we decode a 'SlotId' into a 'FlatSlotId': the `SlotId` used in
   -- 'AConsensusData' is encoded as a epoch and slot-count pair.
   epochAndSlotCount :: Annotated SlotId ByteSpan <- fromCBORAnnotated
-  pk           <- fromCBOR
+  vk           <- fromCBOR
   annChaiDifficulty <- fromCBORAnnotated
   consensusSig <- fromCBOR
   let slotNo = first (flattenSlotId epochSlots) epochAndSlotCount
-  pure $! AConsensusData slotNo pk annChaiDifficulty consensusSig
+  pure $! AConsensusData slotNo vk annChaiDifficulty consensusSig
 
 consensusSlot :: AConsensusData a -> FlatSlotId
 consensusSlot = unAnnotated . aConsensusSlot
