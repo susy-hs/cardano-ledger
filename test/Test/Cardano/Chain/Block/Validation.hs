@@ -113,6 +113,8 @@ epochValid config cvsRef fp = withTests 1 . property $ do
   result <- (liftIO . runResourceT . runExceptT)
     (foldChainValidationState config cvs stream)
   newCvs <- evalEither result
+  newCvsIsNF <- liftIO $ isNormalForm $! newCvs
+  assert newCvsIsNF
   liftIO $ writeIORef cvsRef newCvs
 
 
